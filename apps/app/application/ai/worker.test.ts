@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("server-only", () => ({}));
 vi.mock("@/infrastructure/ai/providers", () => ({
   AtlasImageAdapter: class { generate = mocks.generate },
-  AtlasVideoAdapter: class {},
+  AtlasVideoAdapter: class { generate = mocks.generate },
   AtlasOperationError: class extends Error {},
 }));
 vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: mocks.createSignedAssetUrls }));
@@ -40,5 +40,22 @@ describe("AI worker", () => {
 
     expect(mocks.createSignedAssetUrls).toHaveBeenCalledWith(["ai/user/references/file.png"]);
     expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ references: ["https://signed.example/file.png"] }));
+  });
+
+  it("submits a signed URL instead of a private path for video generation", async () => {
+    const work = { id: "generation", project_id: "project", type: "video", logical_model_key: "video_fast", provider_generation_id: null, prompt: "prompt", negative_prompt: null, input_assets: ["ai/project/generation/0"], requested_duration_seconds: 5, resolution: "720p" };
+    const emptyQuery = query();
+    for (const method of ["eq", "in", "limit", "update"] as const) emptyQuery[method].mockReturnValue(emptyQuery);
+    mocks.createSupabaseServiceRoleClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValueOnce({ error: null, data: [work] }),
+      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(emptyQuery), update: vi.fn().mockReturnValue(emptyQuery) }),
+    });
+    mocks.createSignedAssetUrls.mockResolvedValue(["https://signed.example/output.png"]);
+    mocks.generate.mockResolvedValue({ externalId: "atlas-generation", status: "processing", raw: {} });
+
+    await runAiWorker();
+
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ image: "https://signed.example/output.png" }));
+    expect(mocks.generate).not.toHaveBeenCalledWith(expect.objectContaining({ image: "ai/project/generation/0" }));
   });
 });

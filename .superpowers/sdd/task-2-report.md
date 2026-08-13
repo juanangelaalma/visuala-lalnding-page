@@ -76,3 +76,24 @@ Result: 1 file passed, 1 test passed.
 
 - The scope has no existing route-level fixtures for testing the two ownership rejection branches or persisted request payloads; behavior is covered directly by the route changes and focused worker/schema tests.
 - Existing untracked `apps/scraper/` and Superpowers plan/spec files remain untouched and are excluded from the Task 2 commit.
+
+## Review Finding Fixes
+
+### Changes
+
+- Added a storyboard-route test for an otherwise-valid private reference object path owned by another user. It verifies a `403` response with `REFERENCE_ASSET_FORBIDDEN` and verifies the Supabase service client is never created, so no project is persisted.
+- Added a scene-image-route test for an otherwise-valid private reference object path owned by another user. It verifies a `403` response with `REFERENCE_ASSET_FORBIDDEN` and verifies no generation insert occurs.
+- Added a worker video-submission test verifying Atlas receives the freshly signed URL as `image`, and never receives the private object path.
+
+### TDD Evidence
+
+No production changes were necessary: the existing Task 2 ownership checks and worker signing behavior satisfied all three newly requested coverage cases on their first focused test run. Therefore no RED/fix cycle was applicable under the requested condition to record RED only when a production change is necessary.
+
+### Validation
+
+- `pnpm --filter app test -- app/api/ai/projects/storyboard/route.test.ts 'app/api/ai/scenes/[sceneId]/image/route.test.ts' application/ai/worker.test.ts`
+  - Passed: 3 files, 4 tests.
+- `pnpm --filter app lint -- app/api/ai/projects/storyboard/route.test.ts 'app/api/ai/scenes/[sceneId]/image/route.test.ts' application/ai/worker.test.ts`
+  - Passed with no output/errors.
+- `pnpm --filter app test`
+  - Passed: 35 files, 231 tests.
