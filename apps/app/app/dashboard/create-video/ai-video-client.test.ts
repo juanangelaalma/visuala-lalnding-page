@@ -36,7 +36,7 @@ describe("AI video frontend/backend feature integration", () => {
       requests.push({ url, method: init?.method ?? "GET", body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body ?? null });
 
       if (url.endsWith("/analyze")) return Response.json({ product });
-      if (url.endsWith("/assets")) return Response.json({ assets: ["https://assets.test/reference.webp"] }, { status: 201 });
+      if (url.endsWith("/assets")) return Response.json({ assets: ["ai/user-1/references/0f694b76-9e3f-44e9-8c7a-8b57e9bb74b0.png"] }, { status: 201 });
       if (url.endsWith("/storyboard")) return Response.json({ project: { id: "project-1" }, scenes: [scene] }, { status: 201 });
       if (url.endsWith("/status")) {
         statusRequest++;
@@ -75,9 +75,9 @@ describe("AI video frontend/backend feature integration", () => {
       "GET /api/ai/projects/project-1/status",
     ]);
     expect(requests[0].body).toBeInstanceOf(FormData);
-    expect(requests[2].body).toMatchObject({ product, creator: "nadia", quality: "standard", referenceAssets: ["https://assets.test/reference.webp"] });
+    expect(requests[2].body).toMatchObject({ product, creator: "nadia", quality: "standard", referenceAssets: ["ai/user-1/references/0f694b76-9e3f-44e9-8c7a-8b57e9bb74b0.png"] });
     expect(requests[3].body).toMatchObject({ imagePrompt: scene.imagePrompt, durationSeconds: 4 });
-    expect(requests[4].body).toMatchObject({ references: ["https://assets.test/reference.webp"], idempotencyKey: "render-request-1:image:scene-1", maxEstimatedCostUsd: 0.1 });
+    expect(requests[4].body).toMatchObject({ references: ["ai/user-1/references/0f694b76-9e3f-44e9-8c7a-8b57e9bb74b0.png"], idempotencyKey: "render-request-1:image:scene-1", maxEstimatedCostUsd: 0.1 });
     expect(requests[6].body).toEqual({ generationId: "image-1" });
     expect(requests[7].body).toEqual({ idempotencyKey: "render-request-1:video", maxEstimatedCostUsd: 5 });
   });

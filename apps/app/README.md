@@ -7,15 +7,15 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 AI routes are backend-only. Run `POST /api/ai/worker` from a trusted cron with
 `Authorization: Bearer $AI_WORKER_SECRET`; never expose that secret to browser code.
 Required production variables are `AI_WORKER_SECRET`, `GEMINI_API_KEY`, optional
-`GEMINI_TEXT_MODEL`, `ATLASCLOUD_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
-`R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, and
+`GEMINI_TEXT_MODEL`, `ATLASCLOUD_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and
 `ATLAS_ASSET_HOSTS` (a comma-separated allowlist of Atlas output CDN hostnames).
-The public base URL
-must be the durable HTTPS delivery origin for private R2 objects (for example, an
-authenticated CDN or signed-URL gateway), not the R2 API endpoint.
+`SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed to browser
+code. AI assets are stored in the private Supabase Storage bucket `ai-assets`;
+database records persist object paths, and API responses create signed HTTPS URLs
+that expire after 15 minutes.
 
 Upload product/reference images through authenticated `POST /api/ai/assets` and
-pass the returned durable URLs as `referenceAssets` when creating a storyboard.
+pass the returned object paths as `referenceAssets` when creating a storyboard.
 
 `ATLAS_VIDEO_MODELS_JSON` must be a JSON object keyed by
 `video_i2v_economy`, `video_i2v_default`, `video_i2v_complex`,
