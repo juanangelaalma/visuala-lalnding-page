@@ -50,7 +50,7 @@ export const generationDto = async (row: {
   sceneId: row.scene_id,
   type: row.type,
   status: row.status,
-  assets: await createSignedAssetUrls(row.output_assets),
+  assets: row.status === "queued" ? [] : await createSignedAssetUrls(row.output_assets),
   errorCode: row.error_code,
   createdAt: row.created_at,
   completedAt: row.completed_at,

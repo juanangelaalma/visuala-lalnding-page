@@ -78,6 +78,22 @@ describe("scene image route", () => {
     expect(mocks.createSignedAssetUrls).toHaveBeenCalledWith(["ai/project/generation/0"]);
   });
 
+  it("returns empty assets without signing for an owned queued idempotent image generation", async () => {
+    const scene = result({ id: "scene", project_id: "project", image_prompt: "prompt", negative_prompt: "" });
+    scene.eq.mockReturnValue(scene); scene.single.mockReturnValue(scene);
+    const project = result({ id: "project", reference_assets: [] });
+    project.eq.mockReturnValue(project); project.single.mockReturnValue(project);
+    const existing = result({ id: "generation", scene_id: "scene", type: "image", status: "queued", output_assets: ["ai/project/generation/0"], error_code: null, created_at: "2026-08-13T00:00:00.000Z", completed_at: null });
+    existing.eq.mockReturnValue(existing); existing.maybeSingle.mockReturnValue(existing);
+    mocks.createSupabaseServiceRoleClient.mockReturnValue({ from: vi.fn().mockReturnValueOnce({ select: vi.fn().mockReturnValue(scene) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(project) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(existing) }) });
+
+    const response = await POST(new Request("https://visuala.test/api/ai/scenes/scene/image", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ idempotencyKey: "request-1", references: [] }) }), { params: Promise.resolve({ sceneId: "scene" }) });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ generation: { assets: [] } });
+    expect(mocks.createSignedAssetUrls).not.toHaveBeenCalled();
+  });
+
   it("does not sign assets when the scene's project does not belong to the user", async () => {
     const scene = result({ id: "scene", project_id: "project", image_prompt: "prompt", negative_prompt: "" });
     scene.eq.mockReturnValue(scene); scene.single.mockReturnValue(scene);

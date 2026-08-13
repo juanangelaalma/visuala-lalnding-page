@@ -28,4 +28,11 @@ describe("AI API boundary", () => {
       .resolves.toMatchObject({ assets: ["https://signed.example/output"] });
     expect(mocks.createSignedAssetUrls).toHaveBeenCalledWith(["ai/project/generation/0"]);
   });
+
+  it("keeps queued generation assets empty without signing persisted paths", async () => {
+    mocks.createSignedAssetUrls.mockClear();
+    await expect(generationDto({ id: "generation", scene_id: "scene", type: "image", status: "queued", output_assets: ["ai/project/generation/0"], error_code: null, created_at: "2026-08-13T00:00:00.000Z", completed_at: null }))
+      .resolves.toMatchObject({ assets: [] });
+    expect(mocks.createSignedAssetUrls).not.toHaveBeenCalled();
+  });
 });

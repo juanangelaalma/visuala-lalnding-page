@@ -36,6 +36,21 @@ describe("project video route", () => {
     expect(JSON.stringify(body)).not.toContain("ai/project/generation/0");
   });
 
+  it("returns empty assets without signing for an owned queued idempotent video generation", async () => {
+    const project = query({ id: "project", quality: "standard" }); project.eq.mockReturnValue(project); project.single.mockReturnValue(project);
+    const scenes = query([{ id: "scene", scene_type: "product", motion_complexity: "low", video_prompt: "prompt", duration_seconds: 5, approved_image_generation_id: "image" }]); scenes.eq.mockReturnValue(scenes); scenes.order.mockReturnValue(scenes);
+    const images = query([{ id: "image", output_assets: ["ai/project/image/0"], status: "succeeded" }]); images.in.mockReturnValue(images); images.eq.mockReturnValue(images);
+    const existing = query({ id: "generation", scene_id: "scene", type: "video", status: "queued", output_assets: ["ai/project/generation/0"], error_code: null, created_at: "2026-08-13T00:00:00.000Z", completed_at: null }); existing.eq.mockReturnValue(existing); existing.maybeSingle.mockReturnValue(existing);
+    const update = query(null); update.eq.mockReturnValue(update);
+    mocks.createSupabaseServiceRoleClient.mockReturnValue({ from: vi.fn().mockReturnValueOnce({ select: vi.fn().mockReturnValue(project) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(scenes) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(images) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(existing) }).mockReturnValueOnce({ update: vi.fn().mockReturnValue(update) }) });
+
+    const response = await POST(new Request("https://visuala.test/api/ai/projects/project/video", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ idempotencyKey: "request-1", maxEstimatedCostUsd: 10 }) }), { params: Promise.resolve({ projectId: "project" }) });
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toMatchObject({ generations: [{ assets: [] }] });
+    expect(mocks.createSignedAssetUrls).not.toHaveBeenCalled();
+  });
+
   it("does not sign assets when the project does not belong to the user", async () => {
     const project = query(null, new Error("not found")); project.eq.mockReturnValue(project); project.single.mockReturnValue(project);
     mocks.createSupabaseServiceRoleClient.mockReturnValue({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(project) }) });

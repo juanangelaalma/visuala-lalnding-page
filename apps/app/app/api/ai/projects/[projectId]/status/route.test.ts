@@ -44,4 +44,20 @@ describe("project status route", () => {
     expect(response.status).toBe(404);
     expect(mocks.createSignedAssetUrls).not.toHaveBeenCalled();
   });
+
+  it("returns a safe error without exposing private paths when signing fails", async () => {
+    mocks.createSignedAssetUrls.mockRejectedValue(new Error("Could not sign ai/project/generation/0"));
+    const project = query({ id: "project", status: "complete", duration_seconds: 12, quality: "standard", created_at: "2026-08-13T00:00:00.000Z", updated_at: "2026-08-13T00:01:00.000Z" });
+    project.eq.mockReturnValue(project); project.single.mockReturnValue(project);
+    const scenes = query([]); scenes.eq.mockReturnValue(scenes); scenes.order.mockReturnValue(scenes);
+    const generations = query([{ id: "generation", scene_id: "scene", type: "image", status: "succeeded", output_assets: ["ai/project/generation/0"], error_code: null, created_at: "2026-08-13T00:00:00.000Z", completed_at: null }]); generations.eq.mockReturnValue(generations); generations.order.mockReturnValue(generations);
+    mocks.createSupabaseServiceRoleClient.mockReturnValue({ from: vi.fn().mockReturnValueOnce({ select: vi.fn().mockReturnValue(project) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(scenes) }).mockReturnValueOnce({ select: vi.fn().mockReturnValue(generations) }) });
+
+    const response = await GET(new Request("https://visuala.test/api/ai/projects/project/status"), { params: Promise.resolve({ projectId: "project" }) });
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body).toEqual({ error: { code: "INTERNAL_ERROR", message: "The request could not be completed" } });
+    expect(JSON.stringify(body)).not.toContain("ai/project/generation/0");
+  });
 });
