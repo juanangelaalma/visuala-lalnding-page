@@ -36,7 +36,12 @@ export async function copyRemoteAsset(url: string, key: string) {
     throw new Error("Provider asset host rejected");
   }
 
-  const response = await fetch(source, { signal: AbortSignal.timeout(30_000), redirect: "manual" });
+  let response: Response;
+  try {
+    response = await fetch(source, { signal: AbortSignal.timeout(30_000), redirect: "manual" });
+  } catch {
+    throw new Error("Could not copy provider asset");
+  }
   if (response.status >= 300 && response.status < 400) throw new Error("Provider asset redirect rejected");
   if (!response.ok || !response.body) throw new Error(`Could not copy provider asset (${response.status})`);
   const contentType = response.headers.get("content-type")?.split(";")[0] ?? "";
