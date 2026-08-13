@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import type { VisualaModelKey } from "@/domain/ai/types";
 import { AtlasImageAdapter, AtlasOperationError, AtlasVideoAdapter } from "@/infrastructure/ai/providers";
-import { copyRemoteAsset } from "@/infrastructure/ai/r2-assets";
+import { copyRemoteAsset, createSignedAssetUrls } from "@/infrastructure/ai/supabase-assets";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";
 
 type Work = {
@@ -52,16 +52,17 @@ export async function runAiWorker(limit = 3) {
     try {
       const adapter = row.type === "image" ? new AtlasImageAdapter() : new AtlasVideoAdapter();
       if (!row.provider_generation_id) {
+        const references = await createSignedAssetUrls(row.input_assets);
         const result = row.type === "image"
           ? await new AtlasImageAdapter().generate({
               logicalModelKey: row.logical_model_key as VisualaModelKey,
               prompt: [row.prompt, row.negative_prompt ? `Avoid: ${row.negative_prompt}` : null].filter(Boolean).join("\n"),
-              references: row.input_assets,
+              references,
             })
           : await new AtlasVideoAdapter().generate({
               logicalModelKey: row.logical_model_key as VisualaModelKey,
               prompt: row.prompt ?? "",
-              image: row.input_assets[0],
+              image: references[0],
               duration: row.requested_duration_seconds ?? 5,
               resolution: row.resolution === "1080p" ? "1080p" : "720p",
             });

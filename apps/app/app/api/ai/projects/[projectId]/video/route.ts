@@ -93,7 +93,7 @@ export async function POST(request: Request, context: Context) {
         input_assets: [image.output_assets[0]],
         provider_request: local
           ? { boundary: "waiting_for_composer" }
-          : { image: image.output_assets[0], duration: scene.duration_seconds, resolution: resolutionFor(project.data.quality as QualityTier) },
+          : { duration: scene.duration_seconds, resolution: resolutionFor(project.data.quality as QualityTier) },
         resolution: resolutionFor(project.data.quality as QualityTier),
         requested_duration_seconds: scene.duration_seconds,
         estimated_cost_usd: estimatedCostUsd,

@@ -7,6 +7,10 @@ import { ApiError, authenticated, failure, sceneDto } from "../../_shared";
 
 const sceneColumns = "id,position,title,scene_type,motion_complexity,image_prompt,video_prompt,negative_prompt,dialogue,duration_seconds";
 
+function ownsReferencePaths(paths: string[], userId: string) {
+  return paths.every((path) => path.startsWith(`ai/${userId}/references/`));
+}
+
 export async function POST(request: Request) {
   try {
     const user = await authenticated();
@@ -16,6 +20,9 @@ export async function POST(request: Request) {
     }
 
     const input = storyboardRequestSchema.parse(await request.json());
+    if (!ownsReferencePaths(input.referenceAssets, user.id)) {
+      throw new ApiError(403, "REFERENCE_ASSET_FORBIDDEN", "Reference assets must belong to the authenticated user");
+    }
     const db = createSupabaseServiceRoleClient();
     const existing = await db
       .from("ai_projects")

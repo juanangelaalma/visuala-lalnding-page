@@ -4,6 +4,10 @@ import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/servi
 import { ApiError, authenticated, failure, generationDto } from "../../../_shared";
 
 type Context={params:Promise<{sceneId:string}>};
+function ownsReferencePaths(paths: string[], userId: string) {
+  return paths.every((path) => path.startsWith(`ai/${userId}/references/`));
+}
+
 export async function POST(request: Request, context: Context) {
   try {
     const user = await authenticated();
@@ -36,6 +40,9 @@ export async function POST(request: Request, context: Context) {
     if (previous.error) throw previous.error;
 
     const references = input.references.length ? input.references : project.data.reference_assets;
+    if (!ownsReferencePaths(references, user.id)) {
+      throw new ApiError(403, "REFERENCE_ASSET_FORBIDDEN", "Reference assets must belong to the authenticated user");
+    }
     const model = selectImageModel(references);
     const estimatedCostUsd = estimatedImageCostUsd(model);
     if (estimatedCostUsd > input.maxEstimatedCostUsd) {
@@ -54,7 +61,7 @@ export async function POST(request: Request, context: Context) {
       prompt: scene.data.image_prompt,
       negative_prompt: scene.data.negative_prompt,
       input_assets: references,
-      provider_request: { prompt: scene.data.image_prompt, negativePrompt: scene.data.negative_prompt, references },
+      provider_request: { prompt: scene.data.image_prompt, negativePrompt: scene.data.negative_prompt },
       estimated_cost_usd: estimatedCostUsd,
       credits_charged: 0,
       idempotency_key: input.idempotencyKey,

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { uploadAsset } from "@/infrastructure/ai/r2-assets";
+import { uploadAsset } from "@/infrastructure/ai/supabase-assets";
 import { ApiError, authenticated, failure } from "../_shared";
 
 const allowedTypes = new Map([
