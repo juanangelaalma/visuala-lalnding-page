@@ -1,4 +1,5 @@
 import { createAuthServices } from "@/application/auth/services";
+import { createSignedAssetUrls } from "@/infrastructure/ai/supabase-assets";
 import { timingSafeEqual } from "node:crypto";
 import { ZodError } from "zod";
 
@@ -35,7 +36,7 @@ export function workerAuthorized(value: string | null, secret = process.env.AI_W
   return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
 
-export const generationDto = (row: {
+export const generationDto = async (row: {
   id: string;
   scene_id: string | null;
   type: string;
@@ -49,7 +50,7 @@ export const generationDto = (row: {
   sceneId: row.scene_id,
   type: row.type,
   status: row.status,
-  assets: row.output_assets,
+  assets: await createSignedAssetUrls(row.output_assets),
   errorCode: row.error_code,
   createdAt: row.created_at,
   completedAt: row.completed_at,

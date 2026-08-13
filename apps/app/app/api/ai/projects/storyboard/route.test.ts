@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), createSupabaseServiceRoleClient: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), createSignedAssetUrls: vi.fn(), createSupabaseServiceRoleClient: vi.fn() }));
 
 vi.mock("@/infrastructure/supabase/service-role-client", () => ({ createSupabaseServiceRoleClient: mocks.createSupabaseServiceRoleClient }));
+vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: mocks.createSignedAssetUrls }));
 vi.mock("@/infrastructure/ai/providers", () => ({ GoogleGeminiTextProvider: class {} }));
 vi.mock("../../_shared", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../_shared")>()),

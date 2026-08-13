@@ -60,7 +60,7 @@ export async function POST(request: Request, context: Context) {
           if (reservation.error) throw reservation.error;
           existing.data.status = "queued";
         }
-        results.push(generationDto(existing.data));
+        results.push(await generationDto(existing.data));
         continue;
       }
 
@@ -115,7 +115,7 @@ export async function POST(request: Request, context: Context) {
           if (reservation.error) throw reservation.error;
           raced.data.status = "queued";
         }
-        results.push(generationDto(raced.data));
+        results.push(await generationDto(raced.data));
         continue;
       }
 
@@ -132,7 +132,7 @@ export async function POST(request: Request, context: Context) {
         }
       }
 
-      results.push(generationDto({ ...row.data, status: "queued" }));
+      results.push(await generationDto({ ...row.data, status: "queued" }));
     }
 
     await db.from("ai_projects").update({ status: hasAtlasGeneration ? "generating_scenes" : "composition_waiting" }).eq("id", projectId);

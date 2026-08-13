@@ -33,7 +33,7 @@ export async function POST(request: Request, context: Context) {
         if (reservation.error) throw reservation.error;
         existing.data.status = "queued";
       }
-      return Response.json({ generation: generationDto(existing.data) });
+      return Response.json({ generation: await generationDto(existing.data) });
     }
 
     const previous = await db.from("ai_generations").select("id,attempt_number").eq("scene_id", sceneId).eq("type", "image").order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -81,7 +81,7 @@ export async function POST(request: Request, context: Context) {
         if (reservation.error) throw reservation.error;
         raced.data.status = "queued";
       }
-      return Response.json({ generation: generationDto(raced.data) });
+      return Response.json({ generation: await generationDto(raced.data) });
     }
 
     const spent = await db.rpc("reserve_ai_generation_credits", {
@@ -95,7 +95,7 @@ export async function POST(request: Request, context: Context) {
       throw spent.error;
     }
 
-    return Response.json({ generation: generationDto({ ...row.data, status: "queued" }) }, { status: 202 });
+    return Response.json({ generation: await generationDto({ ...row.data, status: "queued" }) }, { status: 202 });
   } catch (error) {
     return failure(error);
   }
