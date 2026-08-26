@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { AiDomainError } from "@/domain/ai/errors";
 import type { AiScene } from "@/domain/ai/types";
 import { approveSceneImage } from "./approve-scene-image";
 import { deleteScene } from "./delete-scene";
@@ -61,6 +60,6 @@ describe("scene workflows", () => {
     const deps = dependencies();
     deps.generations.findById.mockResolvedValue({ id: "generation-id", sceneId: scene.id, type: "image", status: "processing", outputAssets: ["ai/path"] });
 
-    await expect(approveSceneImage({ ownerId: "user-id", sceneId: scene.id, generationId: "generation-id" }, deps)).rejects.toBeInstanceOf(AiDomainError);
+    await expect(approveSceneImage({ ownerId: "user-id", sceneId: scene.id, generationId: "generation-id" }, deps)).rejects.toMatchObject({ code: "NOT_APPROVABLE", status: 409 });
   });
 });

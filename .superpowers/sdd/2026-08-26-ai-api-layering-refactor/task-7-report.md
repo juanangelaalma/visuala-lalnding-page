@@ -56,3 +56,9 @@ Completed. Existing Task 7 implementation was committed as `d445257 refactor: ex
 
 - Full lint remains blocked by generated Supabase temporary runtime output outside Task 7 scope.
 - The initial Task 7 commit predates this session, so first-cycle RED execution cannot be independently demonstrated.
+
+## Review fix — structured approval error assertion
+
+- Corrected `application/ai/scene-workflows.test.ts` so the incomplete-generation approval safeguard asserts `{ code: "NOT_APPROVABLE", status: 409 }`, matching the structured `AiDomainError` contract required by the Task 7 brief.
+- Command: `pnpm --filter app test -- application/ai/scene-workflows.test.ts`
+- Output: `Test Files  1 passed (1)`; `Tests  3 passed (3)`; exit status `0`.
