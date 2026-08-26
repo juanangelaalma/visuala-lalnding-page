@@ -11,7 +11,7 @@ export async function queueSceneImage(input: QueueSceneImageInput, deps: Depende
   const project = await deps.projects.findOwnedById(scene.projectId, input.ownerId);
   if (!project) throw new AiDomainError(404, "NOT_FOUND", "Scene not found");
   const existing = await deps.generations.findByProjectIdempotencyKey(project.id, input.idempotencyKey);
-  if (existing) return { status: 200, generation: await generationDto(existing, deps.assets) };
+  if (existing) return queuedExistingGeneration(existing, project.id, input.ownerId, deps);
   const references = input.references.length ? input.references : project.referenceAssets;
   if (!references.every((path) => path.startsWith(`ai/${input.ownerId}/references/`))) throw new AiDomainError(403, "REFERENCE_ASSET_FORBIDDEN", "Reference assets must belong to the authenticated user");
   const model = selectImageModel(references);
@@ -24,9 +24,16 @@ export async function queueSceneImage(input: QueueSceneImageInput, deps: Depende
   } catch {
     generation = await deps.generations.findByProjectIdempotencyKey(project.id, input.idempotencyKey);
     if (!generation) throw new Error("Could not queue image generation");
+    return queuedExistingGeneration(generation, project.id, input.ownerId, deps);
   }
   if (generation.status === "awaiting_credit") await reserve(generation.id, project.id, input.ownerId, 1, deps.generations);
   return { status: 202, generation: await generationDto({ ...generation, status: "queued" }, deps.assets) };
+}
+
+async function queuedExistingGeneration(generation: Awaited<ReturnType<AiGenerationRepository["findById"]>> & {}, projectId: string, userId: string, deps: Dependencies) {
+  if (!generation) throw new Error("Generation missing");
+  if (generation.status === "awaiting_credit") await reserve(generation.id, projectId, userId, 1, deps.generations);
+  return { status: 200, generation: await generationDto({ ...generation, status: generation.status === "awaiting_credit" ? "queued" : generation.status }, deps.assets) };
 }
 
 async function reserve(generationId: string, projectId: string, userId: string, amount: number, generations: AiGenerationRepository) {

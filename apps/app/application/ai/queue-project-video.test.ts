@@ -31,4 +31,47 @@ describe("queueProjectVideo", () => {
 
     await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 5 }, deps)).rejects.toMatchObject({ status: 402, code: "INSUFFICIENT_CREDITS" });
   });
+
+  it("rejects an unowned project before loading scenes", async () => {
+    const deps = dependencies();
+    deps.projects.findOwnedById.mockResolvedValue(null);
+
+    await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 5 }, deps)).rejects.toMatchObject({ status: 404, code: "NOT_FOUND" });
+    expect(deps.scenes.listByProjectId).not.toHaveBeenCalled();
+  });
+
+  it("retries credits for an awaiting-credit idempotent video", async () => {
+    const deps = dependencies();
+    deps.generations.findByProjectIdempotencyKey.mockResolvedValue({ ...video, status: "awaiting_credit" });
+    deps.generations.reserveCredits.mockResolvedValue(undefined);
+
+    await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 5 }, deps)).resolves.toMatchObject({ generations: [{ status: "queued" }] });
+    expect(deps.generations.reserveCredits).toHaveBeenCalledWith({ generationId: "video-id", projectId: "project-id", userId: "user-id", amount: 10 });
+  });
+
+  it("signs private assets for a succeeded idempotent video", async () => {
+    const deps = dependencies();
+    deps.generations.findByProjectIdempotencyKey.mockResolvedValue({ ...video, status: "succeeded", outputAssets: ["ai/project/video/0"] });
+    deps.assets.signAssets.mockResolvedValue(["https://signed.example/video"]);
+
+    await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 5 }, deps)).resolves.toMatchObject({ generations: [{ assets: ["https://signed.example/video"] }] });
+  });
+
+  it("rejects a video request below the scene estimate", async () => {
+    const deps = dependencies();
+    deps.generations.reserveCredits.mockResolvedValue(undefined);
+
+    await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 0.01 }, deps)).rejects.toMatchObject({ status: 422, code: "COST_LIMIT_EXCEEDED" });
+    expect(deps.generations.create).not.toHaveBeenCalled();
+  });
+
+  it("reuses a raced video generation and retries its credits", async () => {
+    const deps = dependencies();
+    deps.generations.findByProjectIdempotencyKey.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...video, status: "awaiting_credit" });
+    deps.generations.create.mockRejectedValue(new Error("unique conflict"));
+    deps.generations.reserveCredits.mockResolvedValue(undefined);
+
+    await expect(queueProjectVideo({ ownerId: "user-id", projectId: project.id, idempotencyKey: "request-key", maxEstimatedCostUsd: 5 }, deps)).resolves.toMatchObject({ generations: [{ status: "queued" }] });
+    expect(deps.generations.reserveCredits).toHaveBeenCalledTimes(1);
+  });
 });

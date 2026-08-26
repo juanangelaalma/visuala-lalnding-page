@@ -54,3 +54,21 @@ Prior contracts omitted queue-required generation operations. Under the approved
 
 - Full repository lint remains blocked by pre-existing generated `apps/app/supabase/.temp/start-secrets/supabase_edge_runtime_app/main/index.ts` violations. Targeted changed-file lint passes.
 - Task 6 deferred duplicate reference-asset checks/message drift remain outside Task 8 scope.
+
+## Review regression follow-up
+
+### Added coverage
+
+- Image: `awaiting_credit` idempotent retry, unowned reference rejection before writes, image cost cap, succeeded private-asset signing, unique-conflict recovery.
+- Video: owner scope before scene loading, `awaiting_credit` retry, succeeded private-asset signing, scene cost cap, unique-conflict recovery.
+
+### RED/GREEN evidence
+
+- RED: `pnpm --filter app test -- application/ai/queue-scene-image.test.ts`
+  - 2 expected failures: idempotent `awaiting_credit` response remained `awaiting_credit`; raced generation response used `202` rather than idempotent `200`.
+- GREEN: `pnpm --filter app test -- application/ai/queue-scene-image.test.ts application/ai/queue-project-video.test.ts`
+  - PASS: 2 files, 12 tests.
+
+### Fix
+
+- `queueSceneImage()` now routes existing and unique-conflict-recovered generations through the same credit-retry/queued DTO behavior, preserving status `200` for both idempotent outcomes.
