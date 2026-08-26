@@ -17,7 +17,60 @@ export const storyboardSchema = z.object({ scenes: z.array(storyboardSceneSchema
 export type StoryboardScene = z.infer<typeof storyboardSceneSchema>;
 export type VisualaModelKey = "text_brain_default" | "image_storyboard_economy" | "image_reference_default" | "image_reference_fallback" | "video_animated_image" | "video_i2v_economy" | "video_i2v_default" | "video_i2v_complex" | "video_talking_head" | "video_i2v_premium" | "voice_default" | "voice_premium";
 export type QualityTier = "economy" | "standard" | "premium";
-export type GenerationStatus = "queued" | "processing" | "succeeded" | "failed" | "cancelled";
+export type GenerationStatus = "awaiting_credit" | "queued" | "submitting" | "unknown" | "processing" | "succeeded" | "failed" | "cancelled" | "dead_letter";
+export type AiProjectStatus = "storyboard_processing" | "storyboard_ready" | "storyboard_failed" | "generating_scenes" | "composition_waiting";
+export type AiGenerationType = "text" | "image" | "video" | "composition";
+
+export type AiAsset = {
+  path: string;
+  contentType: string;
+};
+
+export type AiProject = {
+  id: string;
+  userId: string;
+  product: Product;
+  creator: string;
+  durationSeconds: number;
+  quality: QualityTier;
+  referenceAssets: string[];
+  status: AiProjectStatus;
+  idempotencyKey: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AiScene = StoryboardScene & {
+  id: string;
+  projectId: string;
+  position: number;
+  approvedImageGenerationId: string | null;
+  createdAt: string;
+};
+
+export type AiGeneration = {
+  id: string;
+  projectId: string;
+  sceneId: string | null;
+  parentGenerationId: string | null;
+  type: AiGenerationType;
+  logicalModelKey: VisualaModelKey;
+  provider: string;
+  providerModelId: string;
+  status: GenerationStatus;
+  attemptNumber: number;
+  prompt: string | null;
+  negativePrompt: string | null;
+  inputAssets: string[];
+  outputAssets: string[];
+  estimatedCostUsd: number | null;
+  creditsCharged: number;
+  idempotencyKey: string;
+  errorCode: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
 
 export function normalizeSceneDurations(scenes: StoryboardScene[], total: number): StoryboardScene[] {
   const current = scenes.reduce((sum, scene) => sum + scene.duration, 0);
