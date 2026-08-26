@@ -1,6 +1,6 @@
 export class AiDomainError extends Error {
   constructor(
-    public readonly status: 400 | 402 | 403 | 404 | 409 | 422,
+    public readonly status: 400 | 402 | 403 | 404 | 409 | 422 | 500,
     public readonly code: string,
     message: string,
   ) {

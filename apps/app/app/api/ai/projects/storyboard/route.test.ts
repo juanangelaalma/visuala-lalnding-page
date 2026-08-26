@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), createSignedAssetUrls: vi.fn(), createSupabaseServiceRoleClient: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), createStoryboard: vi.fn(), createAiServices: vi.fn() }));
 
-vi.mock("@/infrastructure/supabase/service-role-client", () => ({ createSupabaseServiceRoleClient: mocks.createSupabaseServiceRoleClient }));
-vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: mocks.createSignedAssetUrls }));
-vi.mock("@/infrastructure/ai/providers", () => ({ GoogleGeminiTextProvider: class {} }));
+vi.mock("@/infrastructure/ai/services", () => ({ createAiServices: mocks.createAiServices }));
+vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: vi.fn() }));
 vi.mock("../../_shared", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../_shared")>()),
   authenticated: mocks.authenticated,
@@ -18,6 +17,7 @@ describe("storyboard route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authenticated.mockResolvedValue({ id: "00000000-0000-4000-8000-000000000000" });
+    mocks.createAiServices.mockReturnValue({ createStoryboard: mocks.createStoryboard });
   });
 
   it("rejects another user's reference path before persisting a project", async () => {
@@ -29,6 +29,6 @@ describe("storyboard route", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ error: { code: "REFERENCE_ASSET_FORBIDDEN", message: "Reference assets must belong to the authenticated user" } });
-    expect(mocks.createSupabaseServiceRoleClient).not.toHaveBeenCalled();
+    expect(mocks.createAiServices).not.toHaveBeenCalled();
   });
 });

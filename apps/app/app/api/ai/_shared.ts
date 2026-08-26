@@ -1,4 +1,5 @@
 import { createAuthServices } from "@/application/auth/services";
+import { AiDomainError } from "@/domain/ai/errors";
 import { createSignedAssetUrls } from "@/infrastructure/ai/supabase-assets";
 import { timingSafeEqual } from "node:crypto";
 import { ZodError } from "zod";
@@ -17,7 +18,7 @@ export class ApiError extends Error {
 }
 
 export function failure(error: unknown) {
-  if (error instanceof ApiError) {
+  if (error instanceof ApiError || error instanceof AiDomainError) {
     return Response.json({ error: { code: error.code, message: error.message } }, { status: error.status });
   }
   if (error instanceof ZodError) {

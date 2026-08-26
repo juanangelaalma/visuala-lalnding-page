@@ -17,6 +17,10 @@ export class SupabaseAiAssetRepository implements AiAssetRepository {
     return { path: input.path, contentType: input.contentType };
   }
 
+  async signAssets(paths: string[]): Promise<string[]> {
+    return Promise.all(paths.map((path) => this.createSignedUrl(path)));
+  }
+
   async createSignedUrl(path: string): Promise<string> {
     const { data, error } = await this.supabase.storage.from(BUCKET).createSignedUrl(path, 900);
     if (error || !data?.signedUrl) throw new Error("Could not sign asset");

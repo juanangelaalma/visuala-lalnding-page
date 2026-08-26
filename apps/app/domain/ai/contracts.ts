@@ -6,6 +6,7 @@ export type CreateAiGenerationInput = Omit<AiGeneration, "id" | "createdAt" | "c
 
 export interface AiAssetRepository {
   upload(input: { userId: string; contentType: string; body: Uint8Array; path: string }): Promise<AiAsset>;
+  signAssets(paths: string[]): Promise<string[]>;
 }
 
 export interface AiProjectRepository {
