@@ -22,6 +22,10 @@ export const videoRequestSchema = z.object({
   maxEstimatedCostUsd: z.number().positive().max(100).default(5),
 });
 
+export const approveSceneImageSchema = z.object({
+  generationId: z.string().uuid(),
+});
+
 export const sceneUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   imagePrompt: z.string().min(1).max(4000).optional(),

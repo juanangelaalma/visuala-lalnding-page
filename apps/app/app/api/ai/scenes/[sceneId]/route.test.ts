@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authenticated: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  authenticated: vi.fn(),
+  updateScene: vi.fn(),
+  deleteScene: vi.fn(),
+  createAiServices: vi.fn(),
+}));
 
 vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: vi.fn() }));
-vi.mock("@/infrastructure/supabase/service-role-client", () => ({ createSupabaseServiceRoleClient: vi.fn() }));
+vi.mock("@/infrastructure/ai/services", () => ({ createAiServices: mocks.createAiServices }));
 vi.mock("../../_shared", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../_shared")>()),
   authenticated: mocks.authenticated,
@@ -18,6 +23,10 @@ describe("scene route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authenticated.mockRejectedValue(new ApiError(401, "AUTH_REQUIRED", "Authentication required"));
+    mocks.createAiServices.mockReturnValue({
+      updateScene: mocks.updateScene,
+      deleteScene: mocks.deleteScene,
+    });
   });
 
   it("returns 401 when PATCH request has no user", async () => {
