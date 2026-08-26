@@ -1,4 +1,4 @@
-import { videoRequestSchema } from "@/application/ai/schemas";
+import { videoRequestSchema } from "@/features/ai/schemas/ai-request-schemas";
 import { estimatedVideoCostUsd, providerModelId, resolutionFor, selectVideoModel } from "@/domain/ai/model-registry";
 import type { QualityTier, StoryboardScene } from "@/domain/ai/types";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";

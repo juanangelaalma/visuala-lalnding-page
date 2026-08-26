@@ -1,4 +1,4 @@
-import { imageRequestSchema } from "@/application/ai/schemas";
+import { imageRequestSchema } from "@/features/ai/schemas/ai-request-schemas";
 import { estimatedImageCostUsd, providerModelId, selectImageModel } from "@/domain/ai/model-registry";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";
 import { ApiError, authenticated, failure, generationDto } from "../../../_shared";

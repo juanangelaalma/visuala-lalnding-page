@@ -1,4 +1,4 @@
-import { sceneUpdateSchema } from "@/application/ai/schemas";
+import { sceneUpdateSchema } from "@/features/ai/schemas/ai-request-schemas";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";
 import { ApiError, authenticated, failure, sceneDto } from "../../_shared";
 

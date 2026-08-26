@@ -1,4 +1,4 @@
-import { storyboardRequestSchema } from "@/application/ai/schemas";
+import { storyboardRequestSchema } from "@/features/ai/schemas/ai-request-schemas";
 import { providerModelId } from "@/domain/ai/model-registry";
 import { normalizeSceneDurations, storyboardSchema } from "@/domain/ai/types";
 import { GoogleGeminiTextProvider } from "@/infrastructure/ai/providers";
