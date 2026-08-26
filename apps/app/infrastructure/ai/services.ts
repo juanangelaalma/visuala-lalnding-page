@@ -1,8 +1,8 @@
-import { GoogleGeminiTextProvider } from "@/infrastructure/ai/providers";
-import { SupabaseAiAssetRepository } from "@/infrastructure/ai/supabase-ai-asset-repository";
+import { analyzeProduct } from "@/application/ai/analyze-product";
+import { uploadReferenceAssets } from "@/application/ai/upload-reference-assets";
+import { GoogleGeminiTextProvider } from "./providers";
+import { SupabaseAiAssetRepository } from "./supabase-ai-asset-repository";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";
-import { analyzeProduct } from "./analyze-product";
-import { uploadReferenceAssets } from "./upload-reference-assets";
 
 export function createAiServices() {
   return {

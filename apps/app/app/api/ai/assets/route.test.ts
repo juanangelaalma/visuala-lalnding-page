@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), uploadReferenceAssets: vi.fn() }));
 
-vi.mock("@/application/ai/services", () => ({ createAiServices: () => ({ uploadReferenceAssets: mocks.uploadReferenceAssets }) }));
+vi.mock("@/infrastructure/ai/services", () => ({ createAiServices: () => ({ uploadReferenceAssets: mocks.uploadReferenceAssets }) }));
 vi.mock("../_shared", () => ({
   authenticated: mocks.authenticated,
   ApiError: class ApiError extends Error {

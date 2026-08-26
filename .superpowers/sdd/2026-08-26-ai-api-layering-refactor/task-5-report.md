@@ -28,3 +28,10 @@
 
 ## Risks or follow-up items
 - Full app lint remains blocked by generated Supabase temp source outside Task 5 scope.
+
+## Review fix
+- Moved concrete AI composition from `application/ai/services.ts` to `infrastructure/ai/services.ts`.
+- Deleted application service factory; routes now use infrastructure composition until Task 9 finalizes shared factory.
+- `application/ai/analyze-product.ts` and `application/ai/upload-reference-assets.ts` import domain contracts/providers only.
+- Added infrastructure composition test and repointed route mocks.
+- `pnpm --filter app test -- application/ai/analyze-product application/ai/upload-reference-assets infrastructure/ai/services app/api/ai/analyze app/api/ai/assets` — 6 tests passed.

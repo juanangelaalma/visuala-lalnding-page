@@ -1,4 +1,4 @@
-import { createAiServices } from "@/application/ai/services";
+import { createAiServices } from "@/infrastructure/ai/services";
 import { imageFileExtension, InvalidImagesError, parseImageFiles } from "@/features/ai/schemas/ai-upload-schema";
 import { ApiError, authenticated, failure } from "../_shared";
 

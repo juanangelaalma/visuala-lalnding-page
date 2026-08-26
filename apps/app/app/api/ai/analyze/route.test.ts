@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ createAuthServices: vi.fn(), analyzeProduct: vi.fn() }));
 
 vi.mock("@/application/auth/services", () => ({ createAuthServices: mocks.createAuthServices }));
-vi.mock("@/application/ai/services", () => ({ createAiServices: () => ({ analyzeProduct: mocks.analyzeProduct }) }));
+vi.mock("@/infrastructure/ai/services", () => ({ createAiServices: () => ({ analyzeProduct: mocks.analyzeProduct }) }));
 vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: vi.fn() }));
 
 import { POST } from "./route";
