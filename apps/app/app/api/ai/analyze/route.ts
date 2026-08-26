@@ -1,3 +1,23 @@
-import { productSchema } from "@/domain/ai/types"; import { GoogleGeminiTextProvider } from "@/infrastructure/ai/providers"; import { authenticated,ApiError,failure } from "../_shared";
-const TYPES=new Set(["image/jpeg","image/png","image/webp"]); const MAX=8*1024*1024;
-export async function POST(request:Request){try{await authenticated(); const form=await request.formData(); const files=form.getAll("images").filter((x):x is File=>x instanceof File); if(files.length<1||files.length>8)throw new ApiError(400,"INVALID_IMAGES","Upload 1 to 8 images"); if(files.some(f=>!TYPES.has(f.type)||f.size>MAX))throw new ApiError(400,"INVALID_IMAGES","Images must be JPG, PNG or WEBP and no larger than 8 MB"); const images=await Promise.all(files.map(async f=>({mimeType:f.type,base64:Buffer.from(await f.arrayBuffer()).toString("base64")}))); const result=await new GoogleGeminiTextProvider().generateStructured({schema:productSchema,images,prompt:"Analyze these product and marketplace images for an Indonesian affiliate video. Return JSON with exactly: name, description, category, audience, sellingPoint, offer, cta, keyMessage, concept. Do not invent unverifiable claims."}); return Response.json({product:result.value});}catch(e){return failure(e)}}
+import { createAiServices } from "@/application/ai/services";
+import { parseImageFiles, InvalidImagesError } from "@/features/ai/schemas/ai-upload-schema";
+import { authenticated, ApiError, failure } from "../_shared";
+
+export async function POST(request: Request) {
+  try {
+    await authenticated();
+    const files = parseFiles(await request.formData());
+    const images = await Promise.all(files.map(async (file) => ({ mimeType: file.type, base64: Buffer.from(await file.arrayBuffer()).toString("base64") })));
+    return Response.json(await createAiServices().analyzeProduct({ images }));
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+function parseFiles(formData: FormData) {
+  try {
+    return parseImageFiles(formData);
+  } catch (error) {
+    if (error instanceof InvalidImagesError) throw new ApiError(400, "INVALID_IMAGES", error.message);
+    throw error;
+  }
+}

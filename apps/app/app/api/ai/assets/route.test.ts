@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), uploadAsset: vi.fn() }));
+const mocks = vi.hoisted(() => ({ authenticated: vi.fn(), uploadReferenceAssets: vi.fn() }));
 
-vi.mock("@/infrastructure/ai/supabase-assets", () => ({ uploadAsset: mocks.uploadAsset }));
-vi.mock("../_shared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../_shared")>()),
+vi.mock("@/application/ai/services", () => ({ createAiServices: () => ({ uploadReferenceAssets: mocks.uploadReferenceAssets }) }));
+vi.mock("../_shared", () => ({
   authenticated: mocks.authenticated,
+  ApiError: class ApiError extends Error {
+    constructor(public status: number, public code: string, message: string) {
+      super(message);
+    }
+  },
+  failure: (error: { status?: number; code?: string; message?: string }) => Response.json(
+    { error: { code: error.code ?? "INTERNAL_ERROR", message: error.message ?? "The request could not be completed" } },
+    { status: error.status ?? 500 },
+  ),
 }));
 
 import { POST } from "./route";
@@ -14,7 +22,7 @@ describe("AI assets route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authenticated.mockResolvedValue({ id: "00000000-0000-4000-8000-000000000000" });
-    mocks.uploadAsset.mockImplementation(async (_body, _contentType, key) => key);
+    mocks.uploadReferenceAssets.mockResolvedValue({ assets: ["ai/00000000-0000-4000-8000-000000000000/references/file.png"] });
   });
 
   it("stores uploads under the authenticated user's private reference path", async () => {
@@ -25,6 +33,9 @@ describe("AI assets route", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({ assets: [expect.stringMatching(/^ai\/00000000-0000-4000-8000-000000000000\/references\//)] });
-    expect(mocks.uploadAsset).toHaveBeenCalledWith(expect.any(Uint8Array), "image/png", expect.stringMatching(/^ai\/00000000-0000-4000-8000-000000000000\/references\//));
+    expect(mocks.uploadReferenceAssets).toHaveBeenCalledWith({
+      ownerId: "00000000-0000-4000-8000-000000000000",
+      files: [expect.objectContaining({ body: expect.any(Uint8Array), contentType: "image/png", extension: "png" })],
+    });
   });
 });
