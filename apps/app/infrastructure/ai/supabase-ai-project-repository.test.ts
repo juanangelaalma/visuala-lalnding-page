@@ -14,4 +14,19 @@ describe("SupabaseAiProjectRepository", () => {
     expect(eq).toHaveBeenNthCalledWith(1, "id", "project-id");
     expect(eq).toHaveBeenNthCalledWith(2, "user_id", "user-id");
   });
+
+  it("returns null when owner scope does not match", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const eq = vi.fn().mockReturnThis();
+    const repository = new SupabaseAiProjectRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq, maybeSingle }) }) } as never);
+
+    await expect(repository.findOwnedById("project-id", "other-user-id")).resolves.toBeNull();
+  });
+
+  it("propagates project lookup errors", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: new Error("database unavailable") });
+    const repository = new SupabaseAiProjectRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnThis(), maybeSingle }) }) } as never);
+
+    await expect(repository.findOwnedById("project-id", "user-id")).rejects.toThrow("database unavailable");
+  });
 });

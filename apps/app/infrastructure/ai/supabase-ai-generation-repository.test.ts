@@ -8,4 +8,18 @@ describe("SupabaseAiGenerationRepository", () => {
 
     await expect(repository.findById("generation-id")).resolves.toMatchObject({ projectId: "project-id", logicalModelKey: "image_storyboard_economy", outputAssets: [] });
   });
+
+  it("returns null when generation does not exist", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const repository = new SupabaseAiGenerationRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }) } as never);
+
+    await expect(repository.findById("missing-generation-id")).resolves.toBeNull();
+  });
+
+  it("propagates generation lookup errors", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: new Error("database unavailable") });
+    const repository = new SupabaseAiGenerationRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }) } as never);
+
+    await expect(repository.findById("generation-id")).rejects.toThrow("database unavailable");
+  });
 });

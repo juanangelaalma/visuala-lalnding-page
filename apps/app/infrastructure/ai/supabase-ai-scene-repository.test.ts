@@ -12,4 +12,18 @@ describe("SupabaseAiSceneRepository", () => {
     expect(sceneEq).toHaveBeenCalledWith("id", "scene-id");
     expect(projectEq).toHaveBeenCalledWith("ai_projects.user_id", "user-id");
   });
+
+  it("returns null when owner scope does not match", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const repository = new SupabaseAiSceneRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }) }) } as never);
+
+    await expect(repository.findOwnedById("scene-id", "other-user-id")).resolves.toBeNull();
+  });
+
+  it("propagates scene lookup errors", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: new Error("database unavailable") });
+    const repository = new SupabaseAiSceneRepository({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) }) }) }) } as never);
+
+    await expect(repository.findOwnedById("scene-id", "user-id")).rejects.toThrow("database unavailable");
+  });
 });
