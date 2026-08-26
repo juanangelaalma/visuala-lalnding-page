@@ -22,4 +22,18 @@ describe("SupabaseAiGenerationRepository", () => {
 
     await expect(repository.findById("generation-id")).rejects.toThrow("database unavailable");
   });
+
+  it("reserves credits through the generation reservation RPC", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const repository = new SupabaseAiGenerationRepository({ rpc } as never);
+
+    await expect(repository.reserveCredits({ userId: "user-id", projectId: "project-id", generationId: "generation-id", amount: 1 })).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith("reserve_ai_generation_credits", {
+      p_user_id: "user-id",
+      p_project_id: "project-id",
+      p_generation_id: "generation-id",
+      p_idempotency_key: "ai:generation-id",
+      p_amount: 1,
+    });
+  });
 });

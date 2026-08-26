@@ -27,8 +27,10 @@ export interface AiSceneRepository {
 export interface AiGenerationRepository {
   findByProjectIdempotencyKey(projectId: string, idempotencyKey: string): Promise<AiGeneration | null>;
   findById(id: string): Promise<AiGeneration | null>;
+  findLatestBySceneIdAndTypes(sceneId: string, types: AiGeneration["type"][]): Promise<AiGeneration | null>;
   hasGenerationHistoryForScene(sceneId: string): Promise<boolean>;
   listByProjectId(projectId: string): Promise<AiGeneration[]>;
   create(input: CreateAiGenerationInput): Promise<AiGeneration>;
+  reserveCredits(input: { userId: string; projectId: string; generationId: string; amount: number }): Promise<void>;
   updateStatus(id: string, status: GenerationStatus, input?: { errorCode?: string | null; errorMessage?: string | null; outputAssets?: string[]; completedAt?: string | null }): Promise<void>;
 }

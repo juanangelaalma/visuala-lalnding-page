@@ -21,6 +21,8 @@ describe("createAiServices", () => {
       createStoryboard: expect.any(Function),
       deleteScene: expect.any(Function),
       getProjectStatus: expect.any(Function),
+      queueProjectVideo: expect.any(Function),
+      queueSceneImage: expect.any(Function),
       updateScene: expect.any(Function),
       uploadReferenceAssets: expect.any(Function),
     });

@@ -20,6 +20,12 @@ export class SupabaseAiGenerationRepository implements AiGenerationRepository {
     return data ? mapGeneration(data) : null;
   }
 
+  async findLatestBySceneIdAndTypes(sceneId: string, types: AiGeneration["type"][]): Promise<AiGeneration | null> {
+    const { data, error } = await this.supabase.from("ai_generations").select("*").eq("scene_id", sceneId).in("type", types).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) throw error;
+    return data ? mapGeneration(data) : null;
+  }
+
   async hasGenerationHistoryForScene(sceneId: string): Promise<boolean> {
     const { data, error } = await this.supabase.from("ai_generations").select("id").eq("scene_id", sceneId).limit(1).maybeSingle();
     if (error) throw error;
@@ -36,6 +42,17 @@ export class SupabaseAiGenerationRepository implements AiGenerationRepository {
     const { data, error } = await this.supabase.from("ai_generations").insert({ project_id: input.projectId, scene_id: input.sceneId, parent_generation_id: input.parentGenerationId, type: input.type, logical_model_key: input.logicalModelKey, provider: input.provider, provider_model_id: input.providerModelId, status: input.status, attempt_number: input.attemptNumber, prompt: input.prompt, negative_prompt: input.negativePrompt, input_assets: input.inputAssets, output_assets: input.outputAssets, estimated_cost_usd: input.estimatedCostUsd, credits_charged: input.creditsCharged, idempotency_key: input.idempotencyKey, error_code: input.errorCode, error_message: input.errorMessage }).select("*").single();
     if (error) throw error;
     return mapGeneration(data);
+  }
+
+  async reserveCredits(input: { userId: string; projectId: string; generationId: string; amount: number }): Promise<void> {
+    const { error } = await this.supabase.rpc("reserve_ai_generation_credits", {
+      p_user_id: input.userId,
+      p_project_id: input.projectId,
+      p_generation_id: input.generationId,
+      p_idempotency_key: `ai:${input.generationId}`,
+      p_amount: input.amount,
+    } as never);
+    if (error) throw error;
   }
 
   async updateStatus(id: string, status: GenerationStatus, input?: { errorCode?: string | null; errorMessage?: string | null; outputAssets?: string[]; completedAt?: string | null }): Promise<void> {

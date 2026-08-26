@@ -23,4 +23,9 @@ describe("AI domain boundary", () => {
   it("checks generation history by scene", () => {
     expectTypeOf<AiGenerationRepository>().toHaveProperty("hasGenerationHistoryForScene");
   });
+
+  it("reserves credits and finds latest scene generation", () => {
+    expectTypeOf<AiGenerationRepository>().toHaveProperty("reserveCredits");
+    expectTypeOf<AiGenerationRepository>().toHaveProperty("findLatestBySceneIdAndTypes");
+  });
 });

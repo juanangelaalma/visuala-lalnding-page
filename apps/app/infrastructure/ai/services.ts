@@ -5,6 +5,8 @@ import { uploadReferenceAssets } from "@/application/ai/upload-reference-assets"
 import { approveSceneImage } from "@/application/ai/approve-scene-image";
 import { deleteScene } from "@/application/ai/delete-scene";
 import { updateScene } from "@/application/ai/update-scene";
+import { queueSceneImage } from "@/application/ai/queue-scene-image";
+import { queueProjectVideo } from "@/application/ai/queue-project-video";
 import { GoogleGeminiTextProvider } from "./providers";
 import { SupabaseAiAssetRepository } from "./supabase-ai-asset-repository";
 import { SupabaseAiGenerationRepository } from "./supabase-ai-generation-repository";
@@ -27,5 +29,7 @@ export function createAiServices() {
     updateScene: (input: Parameters<typeof updateScene>[0]) => updateScene(input, { scenes }),
     deleteScene: (input: Parameters<typeof deleteScene>[0]) => deleteScene(input, { scenes, generations }),
     approveSceneImage: (input: Parameters<typeof approveSceneImage>[0]) => approveSceneImage(input, { scenes, generations }),
+    queueSceneImage: (input: Parameters<typeof queueSceneImage>[0]) => queueSceneImage(input, { projects, scenes, generations, assets }),
+    queueProjectVideo: (input: Parameters<typeof queueProjectVideo>[0]) => queueProjectVideo(input, { projects, scenes, generations, assets }),
   };
 }
