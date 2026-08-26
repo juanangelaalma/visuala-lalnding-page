@@ -19,13 +19,14 @@ export interface AiSceneRepository {
   findOwnedById(id: string, userId: string): Promise<AiScene | null>;
   listByProjectId(projectId: string): Promise<AiScene[]>;
   createMany(inputs: CreateAiSceneInput[]): Promise<AiScene[]>;
-  update(id: string, input: Partial<Pick<AiScene, "title" | "imagePrompt" | "videoPrompt" | "negativePrompt" | "dialogue" | "duration" | "approvedImageGenerationId">>): Promise<AiScene>;
+  update(id: string, input: Partial<Pick<AiScene, "title" | "sceneType" | "motionComplexity" | "imagePrompt" | "videoPrompt" | "negativePrompt" | "dialogue" | "duration" | "approvedImageGenerationId">>): Promise<AiScene>;
   delete(id: string): Promise<void>;
 }
 
 export interface AiGenerationRepository {
   findByProjectIdempotencyKey(projectId: string, idempotencyKey: string): Promise<AiGeneration | null>;
   findById(id: string): Promise<AiGeneration | null>;
+  hasGenerationHistoryForScene(sceneId: string): Promise<boolean>;
   listByProjectId(projectId: string): Promise<AiGeneration[]>;
   create(input: CreateAiGenerationInput): Promise<AiGeneration>;
   updateStatus(id: string, status: GenerationStatus, input?: { errorCode?: string | null; errorMessage?: string | null; outputAssets?: string[]; completedAt?: string | null }): Promise<void>;
