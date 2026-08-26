@@ -2,12 +2,16 @@ import "server-only";
 
 import { Readable, Transform } from "node:stream";
 import { z } from "zod";
+import { SupabaseAiAssetRepository } from "./supabase-ai-asset-repository";
 import { createSupabaseServiceRoleClient } from "@/infrastructure/supabase/service-role-client";
 
 const BUCKET = "ai-assets";
 const MAX_BYTES = 100 * 1024 * 1024;
-const SIGNED_URL_TTL_SECONDS = 900;
 const allowed = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm", "audio/mpeg", "audio/wav"]);
+
+function assetRepository() {
+  return new SupabaseAiAssetRepository(createSupabaseServiceRoleClient());
+}
 const atlasAssetHostsSchema = z.object({
   ATLAS_ASSET_HOSTS: z.string().min(1),
 });
@@ -24,9 +28,7 @@ function rejectInvalidAsset(body: Uint8Array, contentType: string) {
 }
 
 export async function uploadAsset(body: Uint8Array, contentType: string, key: string) {
-  rejectInvalidAsset(body, contentType);
-  const { error } = await createSupabaseServiceRoleClient().storage.from(BUCKET).upload(key, body, { contentType, upsert: false });
-  if (error) throw new Error("Could not store asset");
+  await assetRepository().upload({ userId: "", body, contentType, path: key });
   return key;
 }
 
@@ -55,9 +57,7 @@ export async function copyRemoteAsset(url: string, key: string) {
 }
 
 export async function createSignedAssetUrl(path: string) {
-  const { data, error } = await createSupabaseServiceRoleClient().storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
-  if (error || !data?.signedUrl) throw new Error("Could not sign asset");
-  return data.signedUrl;
+  return assetRepository().createSignedUrl(path);
 }
 
 export function createSignedAssetUrls(paths: string[]) {
