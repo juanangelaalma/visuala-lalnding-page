@@ -17,6 +17,11 @@ describe("createAiServices", () => {
 
     expect(createAiServices()).toEqual({
       analyzeProduct: expect.any(Function),
+      approveSceneImage: expect.any(Function),
+      createStoryboard: expect.any(Function),
+      deleteScene: expect.any(Function),
+      getProjectStatus: expect.any(Function),
+      updateScene: expect.any(Function),
       uploadReferenceAssets: expect.any(Function),
     });
   });
