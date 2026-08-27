@@ -1,4 +1,5 @@
-import type { AiAsset, AiGeneration, AiProject, AiScene, GenerationStatus } from "./types";
+import type { AtlasImageProvider, AtlasVideoProvider } from "./providers";
+import type { AiAsset, AiGeneration, AiProject, AiScene, GenerationStatus, VisualaModelKey } from "./types";
 
 export type CreateAiProjectInput = Omit<AiProject, "id" | "createdAt" | "updatedAt">;
 export type CreateAiSceneInput = Omit<AiScene, "id" | "createdAt" | "approvedImageGenerationId"> & { approvedImageGenerationId?: string | null };
@@ -23,6 +24,36 @@ export interface AiSceneRepository {
   update(id: string, input: Partial<Pick<AiScene, "title" | "sceneType" | "motionComplexity" | "imagePrompt" | "videoPrompt" | "negativePrompt" | "dialogue" | "duration" | "approvedImageGenerationId">>): Promise<AiScene>;
   delete(id: string): Promise<void>;
 }
+
+export type AiWorkerWork = {
+  id: string;
+  projectId: string;
+  type: "image" | "video" | "composition";
+  logicalModelKey: VisualaModelKey;
+  providerGenerationId: string | null;
+  prompt: string | null;
+  negativePrompt: string | null;
+  inputAssets: string[];
+  requestedDurationSeconds: number | null;
+  resolution: string | null;
+};
+
+export interface AiWorkerRepository {
+  claimWork(worker: string, limit: number): Promise<AiWorkerWork[]>;
+  listExpiredSubmissionProjectIds(): Promise<string[]>;
+  saveSubmission(input: { id: string; worker: string; providerGenerationId: string; status: GenerationStatus; providerResponse: unknown }): Promise<void>;
+  savePollingResult(input: { id: string; worker: string; status: GenerationStatus; outputAssets: string[]; providerResponse: unknown; actualCostUsd: number | null; errorCode: string | null; completedAt: string | null }): Promise<void>;
+  reverseFailedWork(id: string, worker: string, code: "PROVIDER_REJECTED" | "PROVIDER_NOT_SENT"): Promise<void>;
+  recordFailure(input: { id: string; worker: string; code: "POLL_FAILED" | "SUBMISSION_UNKNOWN"; unknownAfterSend: boolean }): Promise<void>;
+  refreshProjectStatus(projectId: string): Promise<void>;
+}
+
+export type AiWorkerDependencies = {
+  generations: AiWorkerRepository;
+  assets: Pick<AiAssetRepository, "signAssets"> & { copyRemoteAsset(url: string, path: string): Promise<string> };
+  imageProvider: AtlasImageProvider;
+  videoProvider: AtlasVideoProvider;
+};
 
 export interface AiGenerationRepository {
   findByProjectIdempotencyKey(projectId: string, idempotencyKey: string): Promise<AiGeneration | null>;

@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { AiGenerationRepository, AiProjectRepository, AiSceneRepository } from "./contracts";
+import type { AiGenerationRepository, AiProjectRepository, AiSceneRepository, AiWorkerRepository } from "./contracts";
 import { AiDomainError } from "./errors";
 
 describe("AI domain boundary", () => {
@@ -27,5 +27,10 @@ describe("AI domain boundary", () => {
   it("reserves credits and finds latest scene generation", () => {
     expectTypeOf<AiGenerationRepository>().toHaveProperty("reserveCredits");
     expectTypeOf<AiGenerationRepository>().toHaveProperty("findLatestBySceneIdAndTypes");
+  });
+
+  it("defines the worker persistence port at the domain boundary", () => {
+    expectTypeOf<AiWorkerRepository>().toHaveProperty("claimWork");
+    expectTypeOf<AiWorkerRepository>().toHaveProperty("recordFailure");
   });
 });

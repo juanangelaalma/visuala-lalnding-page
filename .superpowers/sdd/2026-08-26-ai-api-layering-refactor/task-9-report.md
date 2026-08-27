@@ -125,3 +125,40 @@ Failed on pre-existing generated `apps/app/supabase/.temp/start-secrets/supabase
 - Full TypeScript typecheck remains blocked by unrelated incomplete repository test doubles.
 - Root lint remains blocked by unrelated generated Supabase temporary source.
 - Existing unrelated `.opencode` deletions and untracked plan/spec files were excluded from the Task 9 commit.
+
+## Review Fixes
+
+- Moved all worker Supabase RPC/table persistence and project-refresh logic from `infrastructure/ai/services.ts` into focused `SupabaseAiWorkerRepository`.
+- Moved the worker work item, persistence port, and dependency contract to `domain/ai/contracts.ts`; `application/ai/worker.ts` now consumes domain-only contracts and provider interfaces.
+- Added worker regressions proving image/video private paths are signed before provider submission, and persistence failure after provider acceptance records `SUBMISSION_UNKNOWN` without credit reversal.
+- Added repository mapping coverage for claimed worker work.
+
+### Review Fix RED
+
+```bash
+pnpm --filter app test -- infrastructure/ai/supabase-ai-worker-repository
+```
+
+```text
+FAIL Cannot find module './supabase-ai-worker-repository'
+```
+
+### Review Fix GREEN
+
+```bash
+pnpm --filter app test -- application/ai/worker infrastructure/ai/supabase-ai-worker-repository
+```
+
+```text
+Test Files  2 passed (2)
+Tests  5 passed (5)
+```
+
+### Review Fix Validation
+
+```bash
+pnpm --filter app test -- application/ai app/api/ai infrastructure/ai
+pnpm --filter app test
+```
+
+Both passed. Full typecheck remains blocked by the same pre-existing incomplete `AiGenerationRepository` test doubles noted above.
