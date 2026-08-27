@@ -1,61 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const mocks = vi.hoisted(() => ({
-  generate: vi.fn(),
-  createSignedAssetUrls: vi.fn(),
-  createSupabaseServiceRoleClient: vi.fn(),
-}));
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/infrastructure/ai/providers", () => ({
-  AtlasImageAdapter: class { generate = mocks.generate },
-  AtlasVideoAdapter: class { generate = mocks.generate },
-  AtlasOperationError: class extends Error {},
-}));
-vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: mocks.createSignedAssetUrls }));
-vi.mock("@/infrastructure/supabase/service-role-client", () => ({ createSupabaseServiceRoleClient: mocks.createSupabaseServiceRoleClient }));
 
 import { runAiWorker } from "./worker";
 
-function query(data: unknown[] = []) {
-  const result = Promise.resolve({ error: null, data });
-  return Object.assign(result, { eq: vi.fn(), in: vi.fn(), limit: vi.fn(), update: vi.fn() });
-}
-
 describe("AI worker", () => {
-  beforeEach(() => vi.clearAllMocks());
+  it("reverses credit only after definite provider submission failure", async () => {
+    const dependencies = {
+      generations: {
+        claimWork: vi.fn().mockResolvedValue([{ id: "generation", projectId: "project", type: "image", logicalModelKey: "image_fast", providerGenerationId: null, prompt: "prompt", negativePrompt: null, inputAssets: [], requestedDurationSeconds: null, resolution: null }]),
+        listExpiredSubmissionProjectIds: vi.fn().mockResolvedValue([]),
+        saveSubmission: vi.fn(),
+        savePollingResult: vi.fn(),
+        reverseFailedWork: vi.fn().mockResolvedValue(undefined),
+        recordFailure: vi.fn(),
+      },
+      assets: { signAssets: vi.fn().mockResolvedValue([]), copyRemoteAsset: vi.fn() },
+      imageProvider: { generate: vi.fn().mockRejectedValue({ outcome: "rejected" }), getStatus: vi.fn() },
+      videoProvider: { generate: vi.fn(), getStatus: vi.fn() },
+      refreshProjectStatus: vi.fn(),
+    };
 
-  it("signs private input paths before submitting image generation", async () => {
-    const work = { id: "generation", project_id: "project", type: "image", logical_model_key: "image_fast", provider_generation_id: null, prompt: "prompt", negative_prompt: null, input_assets: ["ai/user/references/file.png"], requested_duration_seconds: null, resolution: null };
-    const emptyQuery = query();
-    for (const method of ["eq", "in", "limit", "update"] as const) emptyQuery[method].mockReturnValue(emptyQuery);
-    mocks.createSupabaseServiceRoleClient.mockReturnValue({
-      rpc: vi.fn().mockResolvedValueOnce({ error: null, data: [work] }),
-      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(emptyQuery), update: vi.fn().mockReturnValue(emptyQuery) }),
-    });
-    mocks.createSignedAssetUrls.mockResolvedValue(["https://signed.example/file.png"]);
-    mocks.generate.mockResolvedValue({ externalId: "atlas-generation", status: "processing", raw: {} });
+    await runAiWorker({}, dependencies);
 
-    await runAiWorker();
-
-    expect(mocks.createSignedAssetUrls).toHaveBeenCalledWith(["ai/user/references/file.png"]);
-    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ references: ["https://signed.example/file.png"] }));
-  });
-
-  it("submits a signed URL instead of a private path for video generation", async () => {
-    const work = { id: "generation", project_id: "project", type: "video", logical_model_key: "video_fast", provider_generation_id: null, prompt: "prompt", negative_prompt: null, input_assets: ["ai/project/generation/0"], requested_duration_seconds: 5, resolution: "720p" };
-    const emptyQuery = query();
-    for (const method of ["eq", "in", "limit", "update"] as const) emptyQuery[method].mockReturnValue(emptyQuery);
-    mocks.createSupabaseServiceRoleClient.mockReturnValue({
-      rpc: vi.fn().mockResolvedValueOnce({ error: null, data: [work] }),
-      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(emptyQuery), update: vi.fn().mockReturnValue(emptyQuery) }),
-    });
-    mocks.createSignedAssetUrls.mockResolvedValue(["https://signed.example/output.png"]);
-    mocks.generate.mockResolvedValue({ externalId: "atlas-generation", status: "processing", raw: {} });
-
-    await runAiWorker();
-
-    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ image: "https://signed.example/output.png" }));
-    expect(mocks.generate).not.toHaveBeenCalledWith(expect.objectContaining({ image: "ai/project/generation/0" }));
+    expect(dependencies.generations.reverseFailedWork).toHaveBeenCalledWith("generation", expect.any(String), "PROVIDER_REJECTED");
   });
 });

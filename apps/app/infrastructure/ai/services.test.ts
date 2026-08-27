@@ -23,6 +23,7 @@ describe("createAiServices", () => {
       getProjectStatus: expect.any(Function),
       queueProjectVideo: expect.any(Function),
       queueSceneImage: expect.any(Function),
+      runAiWorker: expect.any(Function),
       updateScene: expect.any(Function),
       uploadReferenceAssets: expect.any(Function),
     });

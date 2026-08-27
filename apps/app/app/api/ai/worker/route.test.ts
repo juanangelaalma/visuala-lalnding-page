@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/application/ai/worker", () => ({ runAiWorker: vi.fn() }));
+vi.mock("@/infrastructure/ai/services", () => ({ createAiServices: () => ({ runAiWorker: vi.fn() }) }));
 vi.mock("@/infrastructure/ai/supabase-assets", () => ({ createSignedAssetUrls: vi.fn() }));
 
 import { POST } from "./route";
