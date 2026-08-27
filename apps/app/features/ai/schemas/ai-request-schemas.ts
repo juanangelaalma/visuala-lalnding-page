@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { productSchema } from "@/domain/ai/types";
+import { productSchema, sceneTypeSchema } from "@/domain/ai/types";
 
 const assetPathSchema = z.string().regex(/^ai\/[0-9a-f-]{36}\/references\/[\w.-]+$/i);
 
@@ -28,6 +28,8 @@ export const approveSceneImageSchema = z.object({
 
 export const sceneUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
+  sceneType: sceneTypeSchema.optional(),
+  motionComplexity: z.enum(["low", "medium", "high"]).optional(),
   imagePrompt: z.string().min(1).max(4000).optional(),
   videoPrompt: z.string().min(1).max(4000).optional(),
   negativePrompt: z.string().max(2000).optional(),

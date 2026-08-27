@@ -6,6 +6,8 @@ type Input = {
   ownerId: string;
   sceneId: string;
   title?: string;
+  sceneType?: AiScene["sceneType"];
+  motionComplexity?: AiScene["motionComplexity"];
   imagePrompt?: string;
   videoPrompt?: string;
   negativePrompt?: string;
@@ -23,6 +25,8 @@ export async function updateScene(input: Input, deps: Dependencies): Promise<{ s
 
   const scene = await deps.scenes.update(input.sceneId, {
     title: input.title,
+    sceneType: input.sceneType,
+    motionComplexity: input.motionComplexity,
     imagePrompt: input.imagePrompt,
     videoPrompt: input.videoPrompt,
     negativePrompt: input.negativePrompt,

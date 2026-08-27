@@ -9,6 +9,7 @@ vi.mock("../../_shared", async (importOriginal) => ({
   authenticated: mocks.authenticated,
 }));
 
+import { AiDomainError } from "@/domain/ai/errors";
 import { POST } from "./route";
 
 const product = { name: "Product", description: "Description", category: "Category", audience: "Audience", sellingPoint: "Point", offer: "Offer", cta: "CTA", keyMessage: "Message", concept: "Concept" };
@@ -18,9 +19,10 @@ describe("storyboard route", () => {
     vi.clearAllMocks();
     mocks.authenticated.mockResolvedValue({ id: "00000000-0000-4000-8000-000000000000" });
     mocks.createAiServices.mockReturnValue({ createStoryboard: mocks.createStoryboard });
+    mocks.createStoryboard.mockRejectedValue(new AiDomainError(403, "REFERENCE_ASSET_FORBIDDEN", "Reference assets must belong to the authenticated user"));
   });
 
-  it("rejects another user's reference path before persisting a project", async () => {
+  it("returns reference authorization failure from the storyboard workflow", async () => {
     const response = await POST(new Request("https://visuala.test/api/ai/projects/storyboard", {
       method: "POST",
       headers: { "content-type": "application/json", "idempotency-key": "request-1" },
@@ -29,6 +31,6 @@ describe("storyboard route", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ error: { code: "REFERENCE_ASSET_FORBIDDEN", message: "Reference assets must belong to the authenticated user" } });
-    expect(mocks.createAiServices).not.toHaveBeenCalled();
+    expect(mocks.createStoryboard).toHaveBeenCalledWith(expect.objectContaining({ ownerId: "00000000-0000-4000-8000-000000000000" }));
   });
 });

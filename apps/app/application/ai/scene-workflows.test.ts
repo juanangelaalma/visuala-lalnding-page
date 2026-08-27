@@ -49,6 +49,14 @@ describe("scene workflows", () => {
     expect(deps.scenes.update).toHaveBeenCalledWith(scene.id, expect.objectContaining({ approvedImageGenerationId: null }));
   });
 
+  it("preserves scene type and motion complexity updates", async () => {
+    const deps = dependencies();
+
+    await updateScene({ ownerId: "user-id", sceneId: scene.id, sceneType: "product_showcase", motionComplexity: "high" }, deps);
+
+    expect(deps.scenes.update).toHaveBeenCalledWith(scene.id, expect.objectContaining({ sceneType: "product_showcase", motionComplexity: "high" }));
+  });
+
   it("rejects deleting scene with generation history", async () => {
     const deps = dependencies();
     deps.generations.hasGenerationHistoryForScene.mockResolvedValue(true);

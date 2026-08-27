@@ -1,6 +1,7 @@
 import { estimatedImageCostUsd, providerModelId, selectImageModel } from "@/domain/ai/model-registry";
 import type { AiAssetRepository, AiGenerationRepository, AiProjectRepository, AiSceneRepository } from "@/domain/ai/contracts";
 import { AiDomainError } from "@/domain/ai/errors";
+import { generationDto } from "./generation-dto";
 
 export type QueueSceneImageInput = { ownerId: string; sceneId: string; idempotencyKey: string; references: string[]; maxEstimatedCostUsd: number };
 type Dependencies = { projects: AiProjectRepository; scenes: AiSceneRepository; generations: AiGenerationRepository; assets: AiAssetRepository };
@@ -38,9 +39,4 @@ async function queuedExistingGeneration(generation: Awaited<ReturnType<AiGenerat
 
 async function reserve(generationId: string, projectId: string, userId: string, amount: number, generations: AiGenerationRepository) {
   try { await generations.reserveCredits({ generationId, projectId, userId, amount }); } catch (error) { if (error instanceof Error && error.message.includes("INSUFFICIENT_CREDITS")) throw new AiDomainError(402, "INSUFFICIENT_CREDITS", "Insufficient credits"); throw error; }
-}
-
-async function generationDto(generation: Awaited<ReturnType<AiGenerationRepository["findById"]>> & {}, assets: AiAssetRepository) {
-  if (!generation) throw new Error("Generation missing");
-  return { id: generation.id, sceneId: generation.sceneId, type: generation.type, status: generation.status, assets: generation.status === "queued" ? [] : await assets.signAssets(generation.outputAssets), errorCode: generation.errorCode, createdAt: generation.createdAt, completedAt: generation.completedAt };
 }

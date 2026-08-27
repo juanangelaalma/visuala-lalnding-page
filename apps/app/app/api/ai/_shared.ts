@@ -1,6 +1,5 @@
 import { createAuthServices } from "@/application/auth/services";
 import { AiDomainError } from "@/domain/ai/errors";
-import { createSignedAssetUrls } from "@/infrastructure/ai/supabase-assets";
 import { timingSafeEqual } from "node:crypto";
 import { ZodError } from "zod";
 
@@ -36,49 +35,3 @@ export function workerAuthorized(value: string | null, secret = process.env.AI_W
   const expected = Buffer.from(secret);
   return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
-
-export const generationDto = async (row: {
-  id: string;
-  scene_id: string | null;
-  type: string;
-  status: string;
-  output_assets: string[];
-  error_code: string | null;
-  created_at: string;
-  completed_at: string | null;
-}) => ({
-  id: row.id,
-  sceneId: row.scene_id,
-  type: row.type,
-  status: row.status,
-  assets: row.status === "queued" ? [] : await createSignedAssetUrls(row.output_assets),
-  errorCode: row.error_code,
-  createdAt: row.created_at,
-  completedAt: row.completed_at,
-});
-
-export const sceneDto = (row: {
-  id: string;
-  position: number;
-  title: string;
-  scene_type: string;
-  motion_complexity: string;
-  image_prompt: string;
-  video_prompt: string;
-  negative_prompt: string;
-  dialogue: string;
-  duration_seconds: number;
-  approved_image_generation_id?: string | null;
-}) => ({
-  id: row.id,
-  position: row.position,
-  title: row.title,
-  sceneType: row.scene_type,
-  motionComplexity: row.motion_complexity,
-  imagePrompt: row.image_prompt,
-  videoPrompt: row.video_prompt,
-  negativePrompt: row.negative_prompt,
-  dialogue: row.dialogue,
-  durationSeconds: row.duration_seconds,
-  approvedImageGenerationId: row.approved_image_generation_id ?? null,
-});
