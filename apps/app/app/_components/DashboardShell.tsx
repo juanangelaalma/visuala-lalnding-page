@@ -10,6 +10,7 @@ const defaultDashboardSections: DashboardSidebarSection[] = [
   {
     title: "Main",
     items: [
+      { id: "product-demo", label: "Product Demo", href: "/dashboard/product-demo" },
       { id: "create-story-board", label: "Create Video", href: "/dashboard/create-video" },
       { id: "home", label: "Home", href: "/dashboard/home" },
       { id: "analytics", label: "Analytics", href: "/dashboard/analytics" },
